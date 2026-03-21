@@ -60,35 +60,68 @@ class LicensePlateRecognition:
             logger.error(f"Ошибка на этапе детекции: {e}")
             return ""
 
+        text_without_correction = ""
+        if self.rec is not None:
+            try:
+                text_without_correction = self.rec.get_plates(img_rois)
+                logger.info(f"Распознанный текст (без коррекции): {text_without_correction}")
+            except Exception as e:
+                logger.error(f"Ошибка распознавания без коррекции: {e}")
+        else:
+            logger.error("Модель распознавания не инициализирована")
+
+        text_with_correction = ""
         if self.reg is not None:
             try:
-                img_rois = self.reg.get_correction(img_rois)
-                if not img_rois:
+                img_rois_corrected = self.reg.get_correction(img_rois)
+                if img_rois_corrected and self.rec is not None:
+                    text_with_correction = self.rec.get_plates(img_rois_corrected)
+                    logger.info(f"Распознанный текст (с коррекцией): {text_with_correction}")
+                elif not img_rois_corrected:
                     logger.warning("Коррекция не вернула результатов")
             except Exception as e:
                 logger.error(f"Ошибка на этапе коррекции: {e}")
         else:
             logger.warning("Модель коррекции отключена")
 
-        if self.rec is not None:
-            try:
-                text = self.rec.get_plates(img_rois)
-                if text:
-                    logger.info(f"Распознанный текст: {text}")
-                    return text
-                else:
-                    logger.warning("Распознавание не вернуло текст")
-                    return ""
-            except Exception as e:
-                logger.error(f"Ошибка на этапе распознавания: {e}")
-                return ""
-        else:
-            logger.error("Модель распознавания не инициализирована")
-            return ""
+        result = self._select_valid_plate(text_without_correction, text_with_correction)
+        if result:
+            logger.info(f"Итоговый результат: {result}")
+        return result
+
+    def _select_valid_plate(self, text_without_correction: str, text_with_correction: str) -> str:
+        valid_without = text_without_correction and is_valid_plate(text_without_correction)
+        valid_with = text_with_correction and is_valid_plate(text_with_correction)
+
+        if valid_without and valid_with and text_without_correction == text_with_correction:
+            return text_without_correction
+
+        if valid_without and valid_with:
+            logger.info("Оба варианта валидны, но разные — выбран вариант с коррекцией")
+            return text_with_correction
+
+        if valid_with:
+            logger.info("Валиден только вариант с коррекцией")
+            return text_with_correction
+
+        if valid_without:
+            logger.info("Валиден только вариант без коррекции")
+            return text_without_correction
+
+        if text_with_correction:
+            logger.warning("Ни один вариант не валиден, возвращаем с коррекцией")
+            return text_with_correction
+
+        if text_without_correction:
+            logger.warning("Ни один вариант не валиден, возвращаем без коррекции")
+            return text_without_correction
+
+        logger.warning("Оба варианта пусты")
+        return ""
 
 
 if __name__ == "__main__":
-    path_to_image = r'C:\progs\datasets\znaki\yolo_train\train\images\351.jpg'
+    path_to_image = r"" # путь к изображению
 
     lpr = LicensePlateRecognition()
     result = lpr.get_plates(path_to_image)
