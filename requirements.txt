@@ -1,0 +1,24 @@
+# FastAPI + сервер
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.9
+
+# Обработка изображений
+Pillow>=10.4.0
+opencv-python>=4.10.0
+numpy>=1.24.0,<2.0.0
+
+# Детекция (YOLO)
+ultralytics>=8.3.0
+huggingface-hub>=0.25.0
+
+# Распознавание (PaddleOCR)
+paddleocr==3.4.0
+paddlepaddle==3.3.0
+
+# PyTorch (требуется ultralytics + paddle)
+torch>=2.4.0
+torchvision>=0.19.0
+
+# Логирование и типизация
+pydantic>=2.9.0
