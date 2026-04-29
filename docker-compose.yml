@@ -1,0 +1,21 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: plate-recognition
+    ports:
+      - "8000:8000"
+    environment:
+      UVICORN_HOST: 0.0.0.0
+      UVICORN_PORT: "8000"
+      HF_HOME: /app/.cache/huggingface
+      PADDLE_USE_GPU: "0"
+    volumes:
+      - hf_cache:/app/.cache/huggingface
+      - detection_models:/app/plate_recognition/models/detection
+    restart: unless-stopped
+
+volumes:
+  hf_cache:
+  detection_models:
